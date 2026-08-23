@@ -1,0 +1,247 @@
+{
+  "per_question": [
+    {
+      "id": "q01",
+      "type": "lookup",
+      "question": "Quelle est la date d'effet du contrat AUTO-2024-0137 ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelle est la date d'effet du contrat AUTO-2024-0137 ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q02",
+      "type": "desambiguisation",
+      "question": "Quelle est la franchise bris de glace de mon assurance auto ?",
+      "recall": 1.0,
+      "ok": false,
+      "routing": {
+        "question": "Quelle est la franchise bris de glace de mon assurance auto ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q03",
+      "type": "liste",
+      "question": "Quelles sont toutes les exclusions applicables a la garantie Vol du contrat AUTO-2024-0137 ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelles sont toutes les exclusions applicables a la garantie Vol du contrat AUTO-2024-0137 ?",
+        "type_detecte": "liste",
+        "strategie": "batch",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q04",
+      "type": "distracteur",
+      "question": "Si je rentre seul dans un mur avec ma voiture, suis-je couvert par AUTO-2024-0137 ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Si je rentre seul dans un mur avec ma voiture, suis-je couvert par AUTO-2024-0137 ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q05",
+      "type": "contradiction",
+      "question": "Un degat des eaux du a une canalisation gelee est-il couvert ?",
+      "recall": 1.0,
+      "ok": false,
+      "routing": {
+        "question": "Un degat des eaux du a une canalisation gelee est-il couvert ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q06",
+      "type": "comparaison",
+      "question": "Parmi les contrats auto et moto, lequel a la franchise collision la plus basse ?",
+      "recall": 1.0,
+      "ok": false,
+      "routing": {
+        "question": "Parmi les contrats auto et moto, lequel a la franchise collision la plus basse ?",
+        "type_detecte": "comparaison",
+        "strategie": "batch",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q07",
+      "type": "contradiction",
+      "question": "De combien de temps je dispose pour declarer un sinistre ?",
+      "recall": 0.6666666666666666,
+      "ok": true,
+      "routing": {
+        "question": "De combien de temps je dispose pour declarer un sinistre ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q08",
+      "type": "vocabulaire",
+      "question": "Comment fonctionne la franchise de ma complementaire sante ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Comment fonctionne la franchise de ma complementaire sante ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q09",
+      "type": "temporel",
+      "question": "Quelle police habitation etait en vigueur le 15 avril 2024 ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelle police habitation etait en vigueur le 15 avril 2024 ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q10",
+      "type": "comparaison",
+      "question": "Quelle police habitation offre le plafond degats des eaux le plus eleve ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelle police habitation offre le plafond degats des eaux le plus eleve ?",
+        "type_detecte": "comparaison",
+        "strategie": "batch",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q11",
+      "type": "absence",
+      "question": "Quel est le plafond de remboursement optique du contrat AUTO-2024-0137 ?",
+      "recall": null,
+      "ok": true,
+      "routing": {
+        "question": "Quel est le plafond de remboursement optique du contrat AUTO-2024-0137 ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q12",
+      "type": "absence",
+      "question": "En voyage, suis-je couvert si mon vol est annule a cause d'une pandemie ?",
+      "recall": null,
+      "ok": true,
+      "routing": {
+        "question": "En voyage, suis-je couvert si mon vol est annule a cause d'une pandemie ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q13",
+      "type": "avenant",
+      "question": "Quelle est la franchise degats des eaux du contrat HAB-2024-0461 ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelle est la franchise degats des eaux du contrat HAB-2024-0461 ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    },
+    {
+      "id": "q14",
+      "type": "quasi-jumeau",
+      "question": "Quelle est la franchise vol de ma moto ?",
+      "recall": 1.0,
+      "ok": true,
+      "routing": {
+        "question": "Quelle est la franchise vol de ma moto ?",
+        "type_detecte": "lookup",
+        "strategie": "sequential",
+        "fallback": false
+      }
+    }
+  ],
+  "by_type": {
+    "lookup": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "desambiguisation": {
+      "recall": 1.0,
+      "accuracy": 0.0
+    },
+    "liste": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "distracteur": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "contradiction": {
+      "recall": 0.83,
+      "accuracy": 0.5
+    },
+    "comparaison": {
+      "recall": 1.0,
+      "accuracy": 0.5
+    },
+    "vocabulaire": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "temporel": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "absence": {
+      "recall": null,
+      "accuracy": 1.0
+    },
+    "avenant": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    },
+    "quasi-jumeau": {
+      "recall": 1.0,
+      "accuracy": 1.0
+    }
+  },
+  "strategies": {
+    "all_batch": {
+      "accuracy": 0.86,
+      "tokens": 14223
+    },
+    "all_seq": {
+      "accuracy": 0.71,
+      "tokens": 10078
+    },
+    "routed": {
+      "accuracy": 0.79,
+      "tokens": 8701
+    }
+  },
+  "k": 5
+}

@@ -1,0 +1,135 @@
+{
+  "questions": [
+    {
+      "id": "q01",
+      "question": "Quelle est la date d'effet du contrat AUTO-2024-0137 ?",
+      "type": "lookup",
+      "gold_document_ids": ["AUTO-2024-0137"],
+      "gold_sections": ["AUTO-2024-0137::sec0"],
+      "expected_answer_contains": ["1er mars 2024"],
+      "should_abstain": false
+    },
+    {
+      "id": "q02",
+      "question": "Quelle est la franchise bris de glace de mon assurance auto ?",
+      "type": "desambiguisation",
+      "gold_document_ids": ["AUTO-2024-0137", "AUTO-2023-0092"],
+      "gold_sections": ["AUTO-2024-0137::sec5", "AUTO-2023-0092::sec5"],
+      "expected_answer_contains_any": [["0", "150"], ["formule"], ["contrat"]],
+      "should_abstain": false,
+      "note": "Bon comportement = signaler les DEUX valeurs (0 vs 150) et/ou demander de quelle formule il s'agit. Metrique elargie : accepte '0'+'150', ou 'formule', ou 'contrat'."
+    },
+    {
+      "id": "q03",
+      "question": "Quelles sont toutes les exclusions applicables a la garantie Vol du contrat AUTO-2024-0137 ?",
+      "type": "liste",
+      "gold_document_ids": ["AUTO-2024-0137"],
+      "gold_sections": ["AUTO-2024-0137::sec3", "AUTO-2024-0137::sec4", "AUTO-2024-0137::sec8"],
+      "expected_answer_contains": ["cles", "famille", "antivol", "stationnement"],
+      "should_abstain": false
+    },
+    {
+      "id": "q04",
+      "question": "Si je rentre seul dans un mur avec ma voiture, suis-je couvert par AUTO-2024-0137 ?",
+      "type": "distracteur",
+      "gold_document_ids": ["AUTO-2024-0137"],
+      "gold_sections": ["AUTO-2024-0137::sec2"],
+      "expected_answer_contains": ["tous accidents"],
+      "should_abstain": false
+    },
+    {
+      "id": "q05",
+      "question": "Un degat des eaux du a une canalisation gelee est-il couvert ?",
+      "type": "contradiction",
+      "gold_document_ids": ["HAB-2024-0455", "HAB-2024-0461"],
+      "gold_sections": ["HAB-2024-0455::sec2", "HAB-2024-0461::sec2"],
+      "expected_answer_contains": ["depend"],
+      "should_abstain": false,
+      "note": "VRAI echec attendu : depend du contrat (#3 couvre, #4 exclut). Le systeme tranche pour un seul = faux. On garde la metrique stricte."
+    },
+    {
+      "id": "q06",
+      "question": "Parmi les contrats auto et moto, lequel a la franchise collision la plus basse ?",
+      "type": "comparaison",
+      "gold_document_ids": ["AUTO-2024-0137", "MOTO-2023-0150"],
+      "gold_sections": ["AUTO-2024-0137::sec5", "MOTO-2023-0150::sec5"],
+      "expected_answer_contains": ["AUTO-2024-0137", "500"],
+      "should_abstain": false,
+      "note": "VRAI echec attendu : bonne reponse = AUTO-2024-0137 a 500 CHF. Comparaison multi-docs mal geree. On garde la metrique stricte."
+    },
+    {
+      "id": "q07",
+      "question": "De combien de temps je dispose pour declarer un sinistre ?",
+      "type": "contradiction",
+      "gold_document_ids": ["AUTO-2024-0137", "HAB-2024-0455", "SANTE-2024-0210"],
+      "gold_sections": ["AUTO-2024-0137::sec7", "HAB-2024-0455::sec7", "SANTE-2024-0210::sec7"],
+      "expected_answer_contains_any": [["48", "5 jours"], ["depend"]],
+      "should_abstain": false,
+      "note": "Metrique elargie : accepte la reponse nuancee par famille (48h + 5 jours) OU le mot 'depend'. Manque possible : les 30 j sante (recall 0.67)."
+    },
+    {
+      "id": "q08",
+      "question": "Comment fonctionne la franchise de ma complementaire sante ?",
+      "type": "vocabulaire",
+      "gold_document_ids": ["SANTE-2024-0210"],
+      "gold_sections": ["SANTE-2024-0210::sec1", "SANTE-2024-0210::sec3"],
+      "expected_answer_contains": ["annuelle"],
+      "should_abstain": false
+    },
+    {
+      "id": "q09",
+      "question": "Quelle police habitation etait en vigueur le 15 avril 2024 ?",
+      "type": "temporel",
+      "gold_document_ids": ["HAB-2024-0455"],
+      "gold_sections": ["HAB-2024-0455::sec0"],
+      "expected_answer_contains": ["HAB-2024-0455"],
+      "should_abstain": false
+    },
+    {
+      "id": "q10",
+      "question": "Quelle police habitation offre le plafond degats des eaux le plus eleve ?",
+      "type": "comparaison",
+      "gold_document_ids": ["HAB-2024-0455", "HAB-2024-0461"],
+      "gold_sections": ["HAB-2024-0455::sec5", "HAB-2024-0461::sec5"],
+      "expected_answer_contains": ["HAB-2024-0461", "75"],
+      "should_abstain": false
+    },
+    {
+      "id": "q11",
+      "question": "Quel est le plafond de remboursement optique du contrat AUTO-2024-0137 ?",
+      "type": "absence",
+      "gold_document_ids": [],
+      "gold_sections": [],
+      "expected_answer_contains": [],
+      "should_abstain": true
+    },
+    {
+      "id": "q12",
+      "question": "En voyage, suis-je couvert si mon vol est annule a cause d'une pandemie ?",
+      "type": "absence",
+      "gold_document_ids": [],
+      "gold_sections": [],
+      "expected_answer_contains": [],
+      "should_abstain": true
+    },
+    {
+      "id": "q13",
+      "question": "Quelle est la franchise degats des eaux du contrat HAB-2024-0461 ?",
+      "type": "avenant",
+      "gold_document_ids": ["HAB-2024-0461"],
+      "gold_sections": ["HAB-2024-0461::sec8"],
+      "expected_answer_contains": ["250"],
+      "should_abstain": false,
+      "note": "250 CHF apres avenant (sec8), pas 500 (sec5). Le retrieval doit atteindre l'avenant."
+    },
+    {
+      "id": "q14",
+      "question": "Quelle est la franchise vol de ma moto ?",
+      "type": "quasi-jumeau",
+      "gold_document_ids": ["MOTO-2023-0150"],
+      "gold_sections": ["MOTO-2023-0150::sec5"],
+      "expected_answer_contains": ["500"],
+      "should_abstain": false
+    }
+  ]
+}
