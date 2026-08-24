@@ -1,5 +1,5 @@
 """
-Interface Streamlit — RAG documentaire d'assurance (démo).
+Interface Streamlit - RAG documentaire d'assurance (démo).
 Onglet 1 : chatbot en direct (routage + garde-fous).
 Onglet 2 : tableau de bord d'évaluation (résultats pré-calculés).
 
@@ -20,6 +20,15 @@ try:
         os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
 except Exception:
     pass  # en local, llm.py lira le .env
+
+# --- DEBUG TEMPORAIRE (à retirer avant l'envoi à Kezhan) ---
+_k = os.environ.get("MISTRAL_API_KEY", "")
+st.sidebar.write("DEBUG longueur:", len(_k))
+st.sidebar.write("DEBUG début/fin:", (_k[:4] + "…" + _k[-4:]) if _k else "VIDE")
+try:
+    st.sidebar.write("DEBUG secret présent:", "MISTRAL_API_KEY" in st.secrets)
+except Exception:
+    st.sidebar.write("DEBUG secret présent: (pas de st.secrets)")
 
 # --- Bootstrap : construit l'index si absent (1er démarrage sur le serveur) ---
 @st.cache_resource(show_spinner="Initialisation du moteur (1er démarrage)…")

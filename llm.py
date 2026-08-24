@@ -2,22 +2,33 @@
 Génération avec answer contract.
 Le LLM ne renvoie PAS du texte libre : il renvoie un JSON typé qui dit
 s'il a trouvé la réponse, si elle est complète, avec quelle preuve et quelle confiance.
-C'est ce contrat qui rend l'abstention (mine 4) et l'incomplétude (mine 2) détectables.
+C'est ce contrat qui rend l'abstention et l'incomplétude détectables.
 
 Provider isolé dans une variable -> LLM interchangeable (on ne change qu'ici).
-Clé API lue depuis l'environnement (.env) -> jamais en dur dans le code.
+Clé API lue depuis l'environnement (.env en local, secrets sur le cloud).
+Client chargé PARESSEUSEMENT (au 1er appel), pas à l'import : garantit que la clé
+est déjà posée dans os.environ au moment où on instancie Mistral.
 """
 import os
 import json
 
 from dotenv import load_dotenv
-from mistralai.client import Mistral
+from mistralai.client import Mistral   # SDK mistralai 2.x : import direct, PAS mistralai.client
 
-load_dotenv()  # lit le fichier .env et peuple os.environ
+load_dotenv()  # lit le fichier .env et peuple os.environ (utile en local)
 
 PROVIDER = "mistral"
 MODEL = "mistral-small-latest"
-_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+_client = None
+
+
+def _get_client():
+    """Instancie le client Mistral au premier appel seulement (chargement paresseux)."""
+    global _client
+    if _client is None:
+        _client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+    return _client
+
 
 # --- L'answer contract : la forme EXACTE que le LLM doit renvoyer ---
 SYSTEM_PROMPT = """Tu es un assistant qui répond UNIQUEMENT à partir des extraits de contrats d'assurance fournis.
@@ -36,12 +47,14 @@ Tu réponds STRICTEMENT en JSON, sans texte autour, avec ce schéma :
   "confidence": un nombre entre 0 et 1
 }"""
 
+
 def _format_context(hits):
     """Transforme les hits de search() en un bloc de contexte numéroté."""
     blocs = []
     for h in hits:
         blocs.append(f"[Extrait {h['rank']} — {h['document_id']} / {h['section']}]\n{h['text']}")
     return "\n\n".join(blocs)
+
 
 def generate(question: str, hits: list) -> dict:
     """
@@ -51,7 +64,7 @@ def generate(question: str, hits: list) -> dict:
     context = _format_context(hits)
     user_msg = f"CONTEXTE :\n{context}\n\nQUESTION : {question}"
 
-    resp = _client.chat.complete(
+    resp = _get_client().chat.complete(
         model=MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -62,7 +75,6 @@ def generate(question: str, hits: list) -> dict:
     )
     raw = resp.choices[0].message.content
 
-    # on compte les tokens consommés (utile pour la démo top-1 vs top-k plus tard)
     usage = {"input_tokens": resp.usage.prompt_tokens,
              "output_tokens": resp.usage.completion_tokens}
 
