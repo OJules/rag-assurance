@@ -21,14 +21,6 @@ try:
 except Exception:
     pass  # en local, llm.py lira le .env
 
-# --- DEBUG TEMPORAIRE (à retirer avant l'envoi à Kezhan) ---
-_k = os.environ.get("MISTRAL_API_KEY", "")
-st.sidebar.write("DEBUG longueur:", len(_k))
-st.sidebar.write("DEBUG début/fin:", (_k[:4] + "…" + _k[-4:]) if _k else "VIDE")
-try:
-    st.sidebar.write("DEBUG secret présent:", "MISTRAL_API_KEY" in st.secrets)
-except Exception:
-    st.sidebar.write("DEBUG secret présent: (pas de st.secrets)")
 
 # --- Bootstrap : construit l'index si absent (1er démarrage sur le serveur) ---
 @st.cache_resource(show_spinner="Initialisation du moteur (1er démarrage)…")
@@ -42,7 +34,7 @@ def get_engine():
 answer_routed = get_engine()
 
 # ===========================================================================
-st.title("📄 Assistant documentaire — contrats d'assurance")
+st.title("📄 Assistant documentaire - contrats d'assurance")
 st.caption("Démo RAG sur un corpus synthétique de 7 polices. Retrieval E5 + Chroma, "
            "génération Mistral avec answer contract, routage déterministe.")
 
@@ -115,7 +107,7 @@ with tab_eval:
     st.markdown(
         "- **Le retrieval n'est pas le goulot** : Recall@5 ≈ 0.97. Les erreurs ont un retrieval parfait.\n"
         "- **Erreurs de stratégie** (désambiguïsation, contradiction) : récupérables en affinant la classification.\n"
-        "- **Erreur de raisonnement** (comparaison de montants entre documents) : le LLM se trompe malgré un contexte complet — "
+        "- **Erreur de raisonnement** (comparaison de montants entre documents) : le LLM se trompe malgré un contexte complet - "
         "limite de la génération, pas du pipeline.\n"
         "- **L'abstention fonctionne** : sur les questions sans réponse, le système se tait au lieu d'inventer."
     )
