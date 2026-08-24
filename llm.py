@@ -1,32 +1,30 @@
 """
-Génération avec answer contract.
-Le LLM ne renvoie PAS du texte libre : il renvoie un JSON typé qui dit
-s'il a trouvé la réponse, si elle est complète, avec quelle preuve et quelle confiance.
+Génération avec answer contract - fournisseur : Groq (gratuit, sans carte).
+Le LLM renvoie un JSON typé (answer / evidence / answer_found / complete_answer_found / confidence).
 C'est ce contrat qui rend l'abstention et l'incomplétude détectables.
 
-Provider isolé dans une variable -> LLM interchangeable (on ne change qu'ici).
-Clé API lue depuis l'environnement (.env en local, secrets sur le cloud).
-Client chargé PARESSEUSEMENT (au 1er appel), pas à l'import : garantit que la clé
-est déjà posée dans os.environ au moment où on instancie Mistral.
+Client chargé PARESSEUSEMENT (au 1er appel) : la clé est déjà dans os.environ à ce moment.
 """
 import os
 import json
 
 from dotenv import load_dotenv
-from mistralai.client import Mistral   # SDK mistralai 2.x : import direct, PAS mistralai.client
+from groq import Groq
 
-load_dotenv()  # lit le fichier .env et peuple os.environ (utile en local)
+load_dotenv()  # lit le .env en local ; sur le cloud la clé vient des secrets
 
-PROVIDER = "mistral"
-MODEL = "mistral-small-latest"
+PROVIDER = "groq"
+# Modèle Groq. Si celui-ci est rejeté ("model not found"), va voir la liste
+# à jour sur console.groq.com et remplace la chaîne ci-dessous.
+MODEL = "openai/gpt-oss-120b"
 _client = None
 
 
 def _get_client():
-    """Instancie le client Mistral au premier appel seulement (chargement paresseux)."""
+    """Instancie le client Groq au premier appel seulement (chargement paresseux)."""
     global _client
     if _client is None:
-        _client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        _client = Groq(api_key=os.environ["GROQ_API_KEY"])
     return _client
 
 
@@ -52,7 +50,7 @@ def _format_context(hits):
     """Transforme les hits de search() en un bloc de contexte numéroté."""
     blocs = []
     for h in hits:
-        blocs.append(f"[Extrait {h['rank']} — {h['document_id']} / {h['section']}]\n{h['text']}")
+        blocs.append(f"[Extrait {h['rank']} - {h['document_id']} / {h['section']}]\n{h['text']}")
     return "\n\n".join(blocs)
 
 
@@ -64,7 +62,7 @@ def generate(question: str, hits: list) -> dict:
     context = _format_context(hits)
     user_msg = f"CONTEXTE :\n{context}\n\nQUESTION : {question}"
 
-    resp = _get_client().chat.complete(
+    resp = _get_client().chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -88,7 +86,7 @@ def generate(question: str, hits: list) -> dict:
     return contract
 
 
-# petit test manuel : python llm.py  (nécessite rag.py + une base ingérée + une clé)
+# petit test manuel : python llm.py  (nécessite rag.py + une base ingérée + une clé Groq)
 if __name__ == "__main__":
     from rag import search
     for q in [
