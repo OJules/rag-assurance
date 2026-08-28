@@ -7,7 +7,7 @@ Deux stratégies comparables sur la même question :
         * abstention bornée-> N tentatives sans answer_found (early-stop, coût maîtrisé)
         * épuisement       -> tous les chunks parcourus sans complétude
 
-Règle de décision (posée avec Jules) :
+Règle de décision :
   answer_found == False            -> CONTINUER (on ignore 'complete')
   answer_found == True + complete  -> STOP (suffisance)
   answer_found == True + !complete -> CONTINUER

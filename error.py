@@ -52,7 +52,7 @@ print(f"\n{len(errors)} erreur(s) en mode routé sur {len(gt)} questions.\n")
 for item, c, rec in errors:
     r = "-" if rec is None else f"{rec:.2f}"
     routing = c.get("_routing", {})
-    # diagnostic auto : où ça casse ?
+    # diagnostic auto : où ça casse?
     if rec is not None and rec < 1.0:
         diag = "RETRIEVAL (bonne clause pas/partiellement récupérée)"
     else:

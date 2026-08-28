@@ -18,7 +18,7 @@ print(f"[rag] chargement de {MODEL_NAME} ...")
 _model = SentenceTransformer(MODEL_NAME)
 _client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 _collection = _client.get_collection(COLLECTION)
-print(f"[rag] prêt — {_collection.count()} chunks.")
+print(f"[rag] prêt - {_collection.count()} chunks.")
 
 
 def embed_query(text: str):

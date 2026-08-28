@@ -1,7 +1,7 @@
 """
 Mesure sur le gold set, à DEUX étages :
   - Étage 1 (retrieval)  : Recall@k par élément (proportion des gold_sections dans le top-k).
-  - Étage 2 (réponse)    : exactitude — mots-clés attendus / abstention correcte.
+  - Étage 2 (réponse)    : exactitude - mots-clés attendus / abstention correcte.
 Résultats agrégés ET par TYPE de question.
 
 Deux formes de vérité pour l'exactitude :
