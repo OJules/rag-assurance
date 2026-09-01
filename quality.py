@@ -1,5 +1,6 @@
 """
 Score de qualité d'un chunk extrait d'un document (PDF, Word...).
+Python PUR — aucune dépendance externe.
 
 Objectif : quand l'extraction/reconstruction est imparfaite, le SIGNALER
 plutôt que de laisser le système répondre sur du texte charcuté.
@@ -9,18 +10,11 @@ Catégorie = conséquence de règles nommées, classées par gravité (pas un se
     moyen  = au moins un signal MINEUR, aucun grave
     faible = au moins un signal GRAVE
 
-Signaux (aucun n'est juge unique - c'est leur CONJONCTION qui décide) :
+Signaux (aucun n'est juge unique — c'est leur CONJONCTION qui décide) :
   1. longueur            (fragment orphelin / agglomérat)
   2. debut_coupe / fin_coupe   (phrase tranchée par un saut de page/colonne)
   3. alpha_ratio         (part de lettres : bas = structure potentiellement dégradée)
   4. structure_tabulaire (séparateurs de colonnes répétés : tableau aplati)
-
-Point clé : alpha_ratio bas SEUL n'est que mineur. Combiné à un motif tabulaire,
-il devient grave -> distingue "tableau aplati" (FAIBLE) de "tableau bien structuré"
-ou de texte à chiffres légitimes (BON/MOYEN).
-
-Seuils heuristiques, assumés. Prolongement rigoureux (v2) : les calibrer sur un
-échantillon de chunks annotés à la main (même démarche que le gold set).
 """
 import re
 
@@ -31,9 +25,8 @@ ALPHA_GRAVE       = 0.35
 ALPHA_MINEUR      = 0.55
 PONCTUATION_FIN   = ".!?:»)\"'"
 
-# Séparateurs de colonnes typiques d'un tableau aplati par l'extraction.
 SEP_TABULAIRE = re.compile(r"(\s\|\s|\s{3,}|•|·|\.{4,}|\t)")
-MIN_SEPARATEURS = 2   # au moins 2 séparateurs -> motif tabulaire (plusieurs "colonnes")
+MIN_SEPARATEURS = 2
 
 
 def score_chunk(text: str) -> dict:
@@ -70,20 +63,17 @@ def score_chunk(text: str) -> dict:
     signaux["alpha_ratio"] = round(alpha_ratio, 2)
     part_non_texte = round((1 - alpha_ratio) * 100)
 
-    # --- Signal 4 : motif tabulaire (séparateurs de colonnes répétés) ---
+    # --- Signal 4 : motif tabulaire ---
     nb_sep = len(SEP_TABULAIRE.findall(t))
     tabulaire = nb_sep >= MIN_SEPARATEURS
     signaux["nb_separateurs"] = nb_sep
 
     # --- Décision par CONJONCTION (alpha_ratio n'est jamais juge unique) ---
     if alpha_ratio < ALPHA_MINEUR and tabulaire:
-        # peu de lettres ET des séparateurs répétés = tableau réellement aplati
         graves.append(f"tableau aplati probable : {part_non_texte}% de caractères non alphabétiques et {nb_sep} séparateurs de colonnes")
     elif alpha_ratio < ALPHA_GRAVE:
-        # très peu de lettres mais pas de motif tabulaire net : structure dégradée
         graves.append(f"très forte proportion de caractères non alphabétiques ({part_non_texte}%) : structure dégradée probable")
     elif alpha_ratio < ALPHA_MINEUR:
-        # proportion suspecte mais pas de motif tabulaire : simple signal mineur
         mineurs.append(f"proportion élevée de caractères non alphabétiques ({part_non_texte}%)")
 
     if graves:

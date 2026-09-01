@@ -1,43 +1,89 @@
 """
-Découpage de texte brut (issu d'un PDF/Word) en chunks.
+Découpage de texte extrait d'un PDF/Word en chunks.
 Python PUR — aucune dépendance externe.
 
-Principe : préserver l'unité sémantique/juridique. Les titres/numéros sont des
-INDICES (enrichissement), jamais une DÉPENDANCE. La taille max est un GARDE-FOU.
+Réalité du texte extrait d'un PDF (constatée sur pdfplumber) :
+  - PAS de lignes vides entre les sections (juste des \n simples)
+  - les phrases d'une même clause sont parfois éclatées sur plusieurs lignes
+  - les débuts de section ("1.", "2.1", "8.", "Article N") restent le seul
+    repère de frontière fiable
 
-Ordre de traitement :
-  1. découpe en blocs sur les lignes vides (unités sémantiques candidates)
-  2. fusionne les TITRES ORPHELINS avec le bloc suivant (le titre appartient à sa clause)
-  3. cascade de taille sur chaque bloc :
-       - tient dans la limite            -> gardé entier
-       - trop long                       -> subdivisé par PHRASES
-       - phrase seule dépassant la limite-> découpage BRUTAL (dernier recours)
-  4. fusionne les fragments trop courts avec le voisin
-Chevauchement ajouté uniquement aux coupes forcées, pour ne pas perdre une info à la frontière.
+Stratégie :
+  1. RECOLLE les lignes d'une même clause (une ligne qui ne débute pas une
+     section rejoint la précédente) -> répare les phrases coupées par le PDF
+  2. COUPE à chaque début de section détecté -> une clause = un chunk (+ son titre)
+  3. CASCADE de taille (garde-fou) : une clause > MAX_CHARS est subdivisée par phrases
+  4. REPLI : si AUCUN début de section n'est trouvé (structure trop abîmée),
+     on découpe par taille -> le quality.py signalera la dégradation
+
+Principe : le titre reste un INDICE privilégié de frontière, avec repli.
+La taille n'est qu'un garde-fou secondaire.
 """
 import re
 
-MAX_CHARS = 1200      # garde-fou de taille, pas critère premier
-MIN_CHARS = 60        # en dessous : fragment, à fusionner
-OVERLAP   = 150       # caractères repris entre deux morceaux d'une coupe forcée
+MAX_CHARS = 1200
+MIN_CHARS = 60
+OVERLAP   = 150
 
-RE_TITRE = re.compile(r"^\s*((?:article|chapitre|section)\s+\d+|\d+(?:\.\d+)*\.?)\b", re.I)
+# Début de SECTION : numéro (éventuellement à sous-niveaux) + point + espace,
+# ou mot-clé (Article/Chapitre/Section) + numéro, en TOUT début de ligne.
+# "24 premiers mois" n'est PAS un titre (pas de point après le nombre isolé exigé
+#  par la forme "N. " ; la forme "N.N" exige au moins un sous-niveau).
+RE_DEBUT_SECTION = re.compile(
+    r"^\s*(?:"
+    r"(?:article|chapitre|section)\s+\d+"      # Article 5, Chapitre 2...
+    r"|\d+\.\d+(?:\.\d+)*"                      # 2.1 , 2.1.3  (sous-niveaux)
+    r"|\d+\.(?=\s)"                             # 1.  (numéro + point + espace)
+    r")",
+    re.I,
+)
 
 
-def _detecte_titre(bloc: str):
-    """Titre/numéro en tête de bloc, ou None. Indice, n'impose rien."""
-    m = RE_TITRE.match(bloc)
-    return m.group(1).strip() if m else None
+def _est_debut_section(ligne: str) -> bool:
+    return bool(RE_DEBUT_SECTION.match(ligne))
 
 
-def _est_titre_seul(bloc: str) -> bool:
-    """Vrai si le bloc n'est qu'un titre (court + matche un motif de titre)."""
-    return _detecte_titre(bloc) is not None and len(bloc) < MIN_CHARS
+def _titre_de(ligne: str):
+    """Extrait le libellé de titre en tête de ligne (ou None)."""
+    m = RE_DEBUT_SECTION.match(ligne)
+    return m.group(0).strip() if m else None
+
+
+def _fin_de_phrase(ligne: str) -> bool:
+    return ligne.rstrip().endswith((".", "!", "?", ":", "»"))
+
+
+def _regrouper_en_sections(texte: str):
+    """
+    Parcourt les lignes. Ouvre un nouveau bloc à chaque début de section ;
+    sinon, rattache la ligne au bloc courant (recolle les phrases éclatées).
+    Renvoie une liste de (titre, texte_du_bloc).
+    """
+    lignes = [l.rstrip() for l in texte.split("\n")]
+    sections = []
+    titre_courant = None
+    buffer = []
+    nb_sections_detectees = 0
+
+    for ligne in lignes:
+        if not ligne.strip():
+            continue
+        if _est_debut_section(ligne):
+            if buffer:
+                sections.append((titre_courant, " ".join(buffer).strip()))
+            titre_courant = _titre_de(ligne)
+            buffer = [ligne]
+            nb_sections_detectees += 1
+        else:
+            buffer.append(ligne)
+    if buffer:
+        sections.append((titre_courant, " ".join(buffer).strip()))
+
+    return sections, nb_sections_detectees
 
 
 def _decoupe_par_phrases(texte: str):
-    phrases = re.split(r"(?<=[.!?:])\s+", texte.strip())
-    return [p for p in phrases if p]
+    return [p for p in re.split(r"(?<=[.!?:])\s+", texte.strip()) if p]
 
 
 def _coupe_brutale(texte: str, taille: int, overlap: int):
@@ -49,7 +95,6 @@ def _coupe_brutale(texte: str, taille: int, overlap: int):
 
 
 def _subdivise(bloc: str):
-    """Bloc trop long : par phrases d'abord ; coupe brutale en dernier recours."""
     morceaux, courant = [], ""
     for phrase in _decoupe_par_phrases(bloc):
         if len(phrase) > MAX_CHARS:
@@ -65,35 +110,32 @@ def _subdivise(bloc: str):
     return morceaux
 
 
+def _repli_par_taille(texte: str):
+    """Aucune section détectée : la structure a disparu. Découpage par taille."""
+    flux = " ".join(l.strip() for l in texte.split("\n") if l.strip())
+    return [{"text": m, "titre": None} for m in _subdivise(flux)]
+
+
 def chunk_text(texte: str):
     """
-    Renvoie une liste de dicts : {"text": ..., "titre": <titre détecté ou None>}.
-    Le découpage ne dépend jamais de la présence d'un titre.
+    Renvoie une liste de dicts : {"text": ..., "titre": <titre ou None>}.
+    Adapté au texte extrait de PDF (sans lignes vides fiables).
     """
-    blocs = [b.strip() for b in re.split(r"\n\s*\n", texte) if b.strip()]
+    sections, nb = _regrouper_en_sections(texte)
 
-    # --- Fusion des titres orphelins avec le bloc suivant ---
-    fusionnes_titres = []
-    i = 0
-    while i < len(blocs):
-        if _est_titre_seul(blocs[i]) and i + 1 < len(blocs):
-            fusionnes_titres.append(blocs[i] + " " + blocs[i + 1])  # titre + sa clause
-            i += 2
-        else:
-            fusionnes_titres.append(blocs[i])
-            i += 1
+    # Repli si la structure est trop abîmée (aucune section trouvée)
+    if nb == 0:
+        return _repli_par_taille(texte)
 
-    # --- Cascade de taille ---
     chunks = []
-    for bloc in fusionnes_titres:
-        titre = _detecte_titre(bloc)
+    for titre, bloc in sections:
         if len(bloc) <= MAX_CHARS:
             chunks.append({"text": bloc, "titre": titre})
         else:
             for j, m in enumerate(_subdivise(bloc)):
                 chunks.append({"text": m, "titre": titre if j == 0 else None})
 
-    # --- Fusion des fragments trop courts restants ---
+    # Fusion des fragments trop courts avec le voisin précédent
     final = []
     for c in chunks:
         if final and len(c["text"]) < MIN_CHARS:
@@ -104,18 +146,18 @@ def chunk_text(texte: str):
 
 
 if __name__ == "__main__":
-    faux_pdf = """Article 1. Définitions
-
-Au sens du présent contrat, on entend par sinistre tout événement de nature à mettre en jeu la garantie de l'assureur.
-
-Article 5. Exclusions
-
-La garantie ne s'applique pas dans les cas suivants : lorsque le conducteur n'était pas désigné au contrat ; lorsque le véhicule était utilisé à des fins de transport rémunéré de personnes ; lorsque l'assuré a volontairement causé le dommage ; lorsque le sinistre résulte d'un état d'ébriété caractérisé au moment des faits ; lorsque le véhicule n'avait pas passé le contrôle technique obligatoire ; lorsque les clés ont été laissées à l'intérieur du véhicule non verrouillé ; lorsque le sinistre survient hors de la zone géographique définie à l'article 6 ; lorsque l'antivol agréé n'était pas activé au moment du vol.
-
-Article 6. Zone
-
-Suisse et pays limitrophes."""
-    for i, c in enumerate(chunk_text(faux_pdf)):
+    extrait_pdf = (
+        "POLICE D'ASSURANCE AUTOMOBILE\nContrat n° AUTO-2024-0137\n"
+        "Assureur : Helvétia Synthétique SA\nFormule : Tous risques\n"
+        "1. Définitions\n"
+        "Véhicule assuré : le véhicule désigné aux conditions particulières.\n"
+        "Tiers : toute personne autre que l'assuré, le conducteur et les membres de leur famille vivant\n"
+        "sous le même toit.\n"
+        "2. Garanties\n"
+        "2.1 Responsabilité civile. Couvre les dommages corporels et matériels causés à un tiers du\n"
+        "fait du véhicule assuré.\n"
+        "Valeur à neuf : applicable pendant les 24 premiers mois suivant la mise en circulation.\n"
+    )
+    for i, c in enumerate(chunk_text(extrait_pdf)):
         titre = c["titre"] or "—"
-        print(f"\n[{i}] titre={titre}  ({len(c['text'])} car.)")
-        print(f"    {c['text'][:110]}{'...' if len(c['text']) > 110 else ''}")
+        print(f"[{i}] titre={titre:<14} ({len(c['text'])} car.)  {c['text'][:70]}{'...' if len(c['text'])>70 else ''}")
