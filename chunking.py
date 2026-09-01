@@ -31,12 +31,15 @@ OVERLAP   = 150
 #  par la forme "N. " ; la forme "N.N" exige au moins un sous-niveau).
 RE_DEBUT_SECTION = re.compile(
     r"^\s*(?:"
-    r"(?:article|chapitre|section)\s+\d+"      # Article 5, Chapitre 2...
-    r"|\d+\.\d+(?:\.\d+)*"                      # 2.1 , 2.1.3  (sous-niveaux)
-    r"|\d+\.(?=\s)"                             # 1.  (numéro + point + espace)
+    r"(?:article|chapitre|section)\s+\d{1,2}\b"        # Article 5, Chapitre 2...
+    r"|\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\s+[A-Za-zÀ-ÿ]"  # 2.1 Libellé (sous-niveaux courts)
+    r"|\d{1,2}\.\s+[A-Za-zÀ-ÿ]"                        # 1. Libellé (petit num + point + lettre)
     r")",
     re.I,
 )
+# Note : un TITRE de section = petit numéro (1-2 chiffres) suivi d'un libellé (lettre).
+# Cela EXCLUT volontairement les dates (01.01.2025), les numéros longs (0002.599.519)
+# et les montants (CHF 5000) — découverts comme faux positifs sur un vrai document.
 
 
 def _est_debut_section(ligne: str) -> bool:
@@ -44,9 +47,13 @@ def _est_debut_section(ligne: str) -> bool:
 
 
 def _titre_de(ligne: str):
-    """Extrait le libellé de titre en tête de ligne (ou None)."""
+    """Extrait le numéro de section en tête de ligne (ou None). Sans la lettre du libellé."""
     m = RE_DEBUT_SECTION.match(ligne)
-    return m.group(0).strip() if m else None
+    if not m:
+        return None
+    # on renvoie le numéro seul (ex. "2.1", "8.") sans la 1re lettre du libellé capturée
+    num = re.match(r"^\s*(?:(?:article|chapitre|section)\s+\d{1,2}|\d{1,2}(?:\.\d{1,2}){0,2}\.?)", ligne, re.I)
+    return num.group(0).strip() if num else m.group(0).strip()
 
 
 def _fin_de_phrase(ligne: str) -> bool:
