@@ -3,3 +3,4 @@ sentence-transformers
 chromadb
 groq
 python-dotenv
+pdfplumber

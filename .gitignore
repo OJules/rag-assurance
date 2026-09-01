@@ -2,5 +2,5 @@
 .venv/
 chroma_db/
 __pycache__/
-pdfs/
+pdfs/policy_H.pdf
 chroma_db_pdf/

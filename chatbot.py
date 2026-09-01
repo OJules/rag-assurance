@@ -1,41 +1,50 @@
 """
-Orchestration : assemble retrieval (rag.search) + génération (llm.generate).
+Orchestration : assemble retrieval + génération (llm.generate).
 Deux stratégies comparables sur la même question :
   - answer_batch     : on donne les k chunks d'un coup (1 appel LLM)
   - answer_sequential: top-1, puis top-2, ... avec 3 sorties de boucle :
         * suffisance       -> answer_found ET complete
-        * abstention bornée-> N tentatives sans answer_found (early-stop, coût maîtrisé)
+        * abstention bornée-> N tentatives sans answer_found (early-stop)
         * épuisement       -> tous les chunks parcourus sans complétude
 
 Règle de décision :
   answer_found == False            -> CONTINUER (on ignore 'complete')
   answer_found == True + complete  -> STOP (suffisance)
   answer_found == True + !complete -> CONTINUER
-Contexte CUMULATIF : à l'étape i on envoie chunk_1..chunk_i (pour recomposer).
+Contexte CUMULATIF : à l'étape i on envoie chunk_1..chunk_i.
+
+SOURCE DE RECHERCHE INJECTABLE :
+  par défaut on utilise rag.search (corpus markdown). En passant search_fn=rag_pdf.search,
+  la MÊME chaîne (stratégies, contrat, abstention) tourne sur le corpus PDF, sans autre
+  changement. C'est le bénéfice de l'architecture isolée.
 """
-from rag import search
+from rag import search as _search_markdown
 from llm import generate
 
 ABSTAIN_AFTER = 2   # early-stop : N tentatives sans answer_found -> on borne et on s'abstient
 
 
-def answer_batch(question: str, k: int = 5) -> dict:
-    hits = search(question, k=k)
+def answer_batch(question: str, k: int = 5, search_fn=None) -> dict:
+    search_fn = search_fn or _search_markdown
+    hits = search_fn(question, k=k)
     contract = generate(question, hits)
     contract["_strategy"] = "batch"
     contract["_docs_used"] = len(hits)
     contract["_llm_calls"] = 1
     contract["_total_input_tokens"] = contract["_usage"]["input_tokens"]
+    contract["_hits"] = hits                 # on renvoie les hits pour afficher leur qualité
     return contract
 
 
-def answer_sequential(question: str, k_max: int = 5) -> dict:
-    hits = search(question, k=k_max)
+def answer_sequential(question: str, k_max: int = 5, search_fn=None) -> dict:
+    search_fn = search_fn or _search_markdown
+    hits = search_fn(question, k=k_max)
 
     total_input = 0
     llm_calls = 0
     consecutive_not_found = 0
     last = None
+    used = len(hits)
 
     for i in range(1, len(hits) + 1):
         context = hits[:i]                 # contexte CUMULATIF
@@ -47,25 +56,25 @@ def answer_sequential(question: str, k_max: int = 5) -> dict:
         found = contract.get("answer_found", False)
         complete = contract.get("complete_answer_found", False)
 
-        # 'complete' n'est lu QUE si answer_found est True (garde-fou)
         if found and complete:
             last["_stop_reason"] = "suffisance"
-            last["_docs_used"] = i
+            used = i
             break
 
-        # early-stop : après N tentatives sans rien trouver, on borne et on s'abstient
         consecutive_not_found = consecutive_not_found + 1 if not found else 0
         if consecutive_not_found >= ABSTAIN_AFTER:
             last["_stop_reason"] = "abstention_bornee"
-            last["_docs_used"] = i
+            used = i
             break
     else:
         last["_stop_reason"] = "épuisement"
-        last["_docs_used"] = len(hits)
+        used = len(hits)
 
     last["_strategy"] = "sequential"
+    last["_docs_used"] = used
     last["_llm_calls"] = llm_calls
     last["_total_input_tokens"] = total_input
+    last["_hits"] = hits[:used]              # hits réellement utilisés
     return last
 
 

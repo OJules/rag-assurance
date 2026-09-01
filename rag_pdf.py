@@ -28,13 +28,16 @@ def embed_query(text: str):
     return _model.encode([f"query: {text}"], normalize_embeddings=True).tolist()
 
 
-def search(query: str, k: int = 5):
+def search(query: str, k: int = 5, filtre_fichier: str = None):
     """
     Retourne les k passages les plus proches, avec leur QUALITÉ :
     {rank, similarity, document_id, source_file, titre, quality, quality_raisons, text, metadata}
     """
     q_emb = embed_query(query)
-    res = _collection.query(query_embeddings=q_emb, n_results=k)
+    # filtre optionnel : ne chercher que dans UN document (par nom de fichier).
+    # C'est la clé du passage à l'échelle : on ne mélange pas les contrats.
+    where = {"source_file": filtre_fichier} if filtre_fichier else None
+    res = _collection.query(query_embeddings=q_emb, n_results=k, where=where)
     hits = []
     for rank, (doc, meta, dist) in enumerate(
         zip(res["documents"][0], res["metadatas"][0], res["distances"][0]), start=1
@@ -45,12 +48,21 @@ def search(query: str, k: int = 5):
             "document_id": meta.get("document_id", "??"),
             "source_file": meta.get("source_file", ""),
             "titre": meta.get("titre", ""),
+            "section": meta.get("titre", ""),                       # alias : llm.py attend 'section'
             "quality": meta.get("quality", "?"),                    # bon / moyen / faible
             "quality_raisons": meta.get("quality_raisons", ""),     # le pourquoi, en clair
             "text": doc,
             "metadata": meta,
         })
     return hits
+
+
+
+def documents_disponibles():
+    """Liste les noms de fichiers présents dans la collection (pour un menu de filtre)."""
+    data = _collection.get(include=["metadatas"])
+    fichiers = sorted({m.get("source_file", "?") for m in data["metadatas"]})
+    return fichiers
 
 
 if __name__ == "__main__":
