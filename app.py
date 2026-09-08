@@ -202,6 +202,13 @@ with tab_pdf:
                     st.write(texte[:400] + ("…" if len(texte) > 400 else ""))
                     if qy != "bon":
                         st.caption(f"⚠️ Extraction {LABEL.get(qy, qy)} : {h.get('quality_raisons','')}")
+                    pdf_path = Path("pdfs") / h.get("source_file", "")
+                    if pdf_path.exists():
+                        with open(pdf_path, "rb") as _f:
+                            st.download_button(
+                                "📄 Voir le document source", _f.read(),
+                                file_name=h["source_file"], mime="application/pdf",
+                                key=f"dl_{fichier}_{h.get('rank')}_{h.get('source_file')}")
             st.caption(f"🔧 {r.get('_routing',{}).get('strategie','—')} · "
                        f"{r.get('_total_input_tokens','—')} tokens (entrée)")
 
