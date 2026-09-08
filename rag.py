@@ -18,7 +18,7 @@ print(f"[rag] chargement de {MODEL_NAME} ...")
 _model = SentenceTransformer(MODEL_NAME)
 _client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 _collection = _client.get_collection(COLLECTION)
-print(f"[rag] prêt - {_collection.count()} chunks.")
+print(f"[rag] prêt — {_collection.count()} chunks.")
 
 
 def embed_query(text: str):
@@ -26,13 +26,15 @@ def embed_query(text: str):
     return _model.encode([f"query: {text}"], normalize_embeddings=True).tolist()
 
 
-def search(query: str, k: int = 5):
+def search(query: str, k: int = 5, filtre_document: str = None):
     """
     Retourne les k passages les plus proches, sous forme de liste de dicts :
     {rank, similarity, document_id, section, is_avenant, date_effet_iso, text, metadata}
+    filtre_document : si fourni, ne cherche que dans ce contrat (document_id) -> per-contract.
     """
     q_emb = embed_query(query)
-    res = _collection.query(query_embeddings=q_emb, n_results=k)
+    where = {"document_id": filtre_document} if filtre_document else None
+    res = _collection.query(query_embeddings=q_emb, n_results=k, where=where)
 
     hits = []
     for rank, (doc, meta, dist) in enumerate(

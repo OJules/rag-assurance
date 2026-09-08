@@ -1,0 +1,66 @@
+{
+  "description": "Questions-pièges pour mesurer la confusion entre contrats (contract attribution).",
+  "note_methodo": "Vérité terrain sur le corpus SYNTHÉTIQUE markdown (valeurs connues, écrites par l'auteur). Sert à comparer l'architecture Global vs Per-contract. La valeur de la Q3 (dégâts des eaux, HAB-2024-0461) est 250 CHF = valeur EN VIGUEUR après avenant (base 500 CHF ramenée à 250).",
+  "questions": [
+    {
+      "id": "trap_01",
+      "question": "Quelle est la franchise en cas de vol ?",
+      "attribut": "franchise vol",
+      "ambigue": false,
+      "attendus": [
+        {"document_id": "AUTO-2023-0092", "valeur": "750 CHF", "valeur_num": 750},
+        {"document_id": "MOTO-2023-0150", "valeur": "500 CHF", "valeur_num": 500}
+      ]
+    },
+    {
+      "id": "trap_02",
+      "question": "Quelle est la franchise bris de glace ?",
+      "attribut": "franchise bris de glace",
+      "ambigue": false,
+      "attendus": [
+        {"document_id": "AUTO-2024-0137", "valeur": "0 CHF", "valeur_num": 0},
+        {"document_id": "AUTO-2023-0092", "valeur": "150 CHF", "valeur_num": 150},
+        {"document_id": "MOTO-2023-0150", "valeur": "0 CHF", "valeur_num": 0}
+      ]
+    },
+    {
+      "id": "trap_03",
+      "question": "Quelle est la franchise en cas de dégâts des eaux ?",
+      "attribut": "franchise dégâts des eaux",
+      "ambigue": false,
+      "note": "HAB-2024-0461 : 250 CHF EN VIGUEUR (avenant), base 500 CHF. Teste la prise en compte de l'avenant.",
+      "attendus": [
+        {"document_id": "HAB-2024-0455", "valeur": "300 CHF", "valeur_num": 300},
+        {"document_id": "HAB-2024-0461", "valeur": "250 CHF", "valeur_num": 250}
+      ]
+    },
+    {
+      "id": "trap_04",
+      "question": "Quel est le plafond pour le vol mobilier ?",
+      "attribut": "plafond vol mobilier",
+      "ambigue": false,
+      "attendus": [
+        {"document_id": "HAB-2024-0455", "valeur": "80 000 CHF", "valeur_num": 80000},
+        {"document_id": "HAB-2024-0461", "valeur": "100 000 CHF", "valeur_num": 100000}
+      ]
+    },
+    {
+      "id": "trap_05",
+      "question": "Quel est le plafond pour les dégâts des eaux ?",
+      "attribut": "plafond dégâts des eaux",
+      "ambigue": false,
+      "attendus": [
+        {"document_id": "HAB-2024-0455", "valeur": "50 000 CHF", "valeur_num": 50000},
+        {"document_id": "HAB-2024-0461", "valeur": "75 000 CHF", "valeur_num": 75000}
+      ]
+    },
+    {
+      "id": "trap_06",
+      "question": "Quelle est la franchise ?",
+      "attribut": "franchise (non spécifiée)",
+      "ambigue": true,
+      "note": "Piège d'incomplétude : aucune valeur unique attendue. Le bon comportement est de distinguer par contrat / type de franchise, pas de donner un chiffre nu. Une réponse avec un montant sans préciser le contrat = INCOMPLETE.",
+      "attendus": []
+    }
+  ]
+}
