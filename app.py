@@ -56,7 +56,7 @@ st.title("📄 Assistant documentaire - contrats d'assurance")
 st.caption("Démo RAG. Retrieval E5 + Chroma, génération avec answer contract, routage déterministe. "
            "Le même moteur répond sur un corpus markdown propre (onglet 1) et sur de vrais PDF (onglet 3).")
 
-tab_chat, tab_eval, tab_pdf = st.tabs(["💬 Chatbot (markdown)", "📊 Évaluation", "📄 Chatbot (PDF réels)"])
+tab_chat, tab_eval, tab_pdf = st.tabs(["💬 Chatbot (markdown)", "📊 Évaluation", "📄 Aide à la décision (PDF)"])
 
 # ---------------------------------------------------------------- Onglet chatbot markdown
 with tab_chat:
@@ -141,80 +141,86 @@ with tab_eval:
 
 # ---------------------------------------------------------------- Onglet chatbot PDF
 with tab_pdf:
-    st.markdown("### Le même système, sur de vrais PDF")
-    st.caption("Corpus : 2 polices synthétiques converties en PDF + 3 vrais documents d'assureurs "
-               "(Allianz, Virgin Money). La réponse est générée comme dans l'onglet 1, mais chaque "
-               "**source affiche sa qualité d'extraction** — le système montre quand il s'appuie sur "
-               "un texte mal reconstruit par le PDF, au lieu de le masquer.")
-
-    with st.expander("Pourquoi ce contrôle qualité ?"):
-        st.markdown(
-            "Un PDF n'est pas du texte structuré : colonnes, tableaux et sauts de page produisent "
-            "des passages coupés ou mélangés à l'extraction. Un score par passage (🟢 bon, 🟠 moyen, "
-            "🔴 faible) signale ces dégradations **et pourquoi**. Limite connue : le score attrape les "
-            "coupures et fragments, pas encore l'entrelacement de colonnes — dans ce cas, c'est "
-            "l'abstention du LLM qui sert de second filet."
-        )
+    st.markdown("### Aide à la décision sur documents réels")
+    st.caption("Vue orientée gestionnaire : décision, justification, clauses citées, incertitude. "
+               "En mode « tous les contrats », le système raisonne CONTRAT PAR CONTRAT (jamais de "
+               "mélange) et présente une décision par contrat.")
 
     answer_routed_pdf, rag_pdf = get_engine_pdf()
 
-    # --- sélecteur de document : on ne mélange pas les contrats ---
-    docs = ["Tous les documents"] + rag_pdf.documents_disponibles()
-    choix = st.selectbox("Document à interroger", docs, key="pdf_doc",
-                         help="Filtrer la recherche sur un seul contrat évite de mélanger "
-                              "les sources de plusieurs documents (clé du passage à l'échelle).")
-    filtre = None if choix == "Tous les documents" else choix
+    docs = ["Tous les contrats"] + rag_pdf.documents_disponibles()
+    choix = st.selectbox("Contrat à interroger", docs, key="pdf_doc",
+                         help="Un contrat précis = une décision. « Tous » = une décision par "
+                              "contrat pertinent, sans jamais mélanger leurs clauses.")
+    mode_tous = (choix == "Tous les contrats")
+    if mode_tous:
+        n_docs = st.slider("Nombre de contrats à analyser", 1, 5, 3, key="pdf_n",
+                           help="Le système isole le raisonnement par contrat : chaque contrat "
+                                "analysé = un appel séparé (plus juste, mais plus coûteux).")
 
-    # search_fn pré-configurée avec le filtre choisi
-    def pdf_search(question, k=5):
-        return rag_pdf.search(question, k=k, filtre_fichier=filtre)
+    qp = st.text_input("Question du gestionnaire", key="pdf_q",
+                       placeholder="Ex. : Quelle est la franchise en cas de bris de glace ?")
 
-    qp = st.text_input("Votre question", key="pdf_q",
-                       placeholder="Ex. : Que faire en cas de sinistre à l'étranger ?")
-    if st.button("Interroger les PDF", type="primary", key="pdf_btn") and qp.strip():
-        with st.spinner("Recherche et génération sur les PDF…"):
-            r = answer_routed_pdf(qp, k=5, verbose=False, search_fn=pdf_search)
+    def _search_pour(fichier):
+        return lambda question, k=5: rag_pdf.search(question, k=k, filtre_fichier=fichier)
 
-        # --- la réponse ---
-        if r.get("answer_found"):
-            st.success(r["answer"])
-        else:
-            st.warning("🤚 " + r["answer"] + "\n\n*(Le système s'abstient : l'information n'est pas "
-                       "présente, ou les passages sont trop dégradés pour conclure.)*")
+    def _etat(found, hits):
+        n_deg = sum(1 for h in hits if h.get("quality") in ("moyen", "faible"))
+        if not found:
+            return "🔴", "Information insuffisante", n_deg
+        if n_deg:
+            return "🟠", "Réponse à vérifier", n_deg
+        return "🟢", "Réponse trouvée", n_deg
 
-        # --- qualité des sources utilisées ---
+    def _carte_contrat(fichier, r):
+        """Affiche une carte de décision pour un contrat."""
         hits = r.get("_hits", [])
-        n_degrade = sum(1 for h in hits if h.get("quality") in ("moyen", "faible"))
-        if n_degrade:
-            st.warning(f"⚠️ {n_degrade} des {len(hits)} sources utilisées proviennent d'une "
-                       "extraction imparfaite. La réponse est à vérifier dans le document original.")
+        found = r.get("answer_found", False)
+        couleur, libelle, n_deg = _etat(found, hits)
+        with st.container(border=True):
+            st.markdown(f"### {couleur} {fichier}")
+            st.caption(libelle)
+            if found:
+                st.markdown(f"**{r['answer']}**")
+            else:
+                st.markdown(f"*{r['answer']}*")
+            if found and n_deg:
+                raisons = {h.get("quality_raisons", "") for h in hits
+                           if h.get("quality") in ("moyen", "faible") and h.get("quality_raisons")}
+                st.warning("⚠️ À vérifier : " + " ; ".join(sorted(raisons)))
+            # clauses citées
+            with st.expander("Clauses citées"):
+                for h in hits:
+                    qy = h.get("quality", "?")
+                    titre = f"Section {h['titre']}" if h.get("titre") else "Passage"
+                    st.markdown(f"{FLAG.get(qy,'?')} **{h.get('source_file','?')}** — {titre}")
+                    texte = h.get("text", "")
+                    if texte.startswith("["):
+                        c = texte.find("]\n")
+                        if c != -1:
+                            texte = texte[c + 2:]
+                    st.write(texte[:400] + ("…" if len(texte) > 400 else ""))
+                    if qy != "bon":
+                        st.caption(f"⚠️ Extraction {LABEL.get(qy, qy)} : {h.get('quality_raisons','')}")
+            st.caption(f"🔧 {r.get('_routing',{}).get('strategie','—')} · "
+                       f"{r.get('_total_input_tokens','—')} tokens (entrée)")
 
-        st.markdown("#### Sources utilisées")
-        for h in hits:
-            qy = h.get("quality", "?")
-            with st.container(border=True):
-                st.markdown(f"{FLAG.get(qy, '?')} **{h.get('source_file', '?')}** · "
-                            f"similarité {h.get('similarity', 0):.2f} · qualité {LABEL.get(qy, qy)}")
-                if h.get("titre"):
-                    st.caption(f"Section détectée : {h['titre']}")
-                # retire le préfixe d'identité [.. — ..] pour l'affichage
-                texte = h.get("text", "")
-                if texte.startswith("["):
-                    coupe = texte.find("]\n")
-                    if coupe != -1:
-                        texte = texte[coupe + 2:]
-                st.write(texte[:600] + ("…" if len(texte) > 600 else ""))
-                if qy != "bon":
-                    st.caption(f"⚠️ Qualité {LABEL.get(qy, qy)} : {h.get('quality_raisons', '')}")
-                pdf_path = Path("pdfs") / h.get("source_file", "")
-                if pdf_path.exists():
-                    with open(pdf_path, "rb") as f:
-                        st.download_button("📄 Ouvrir le PDF source", f.read(),
-                                           file_name=h["source_file"], mime="application/pdf",
-                                           key=f"dl_{h.get('rank')}_{h.get('source_file')}")
-
-        rt = r.get("_routing", {})
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Type détecté", rt.get("type_detecte", "—"))
-        c2.metric("Stratégie", rt.get("strategie", "—"))
-        c3.metric("Tokens (entrée)", r.get("_total_input_tokens", "—"))
+    if st.button("Analyser", type="primary", key="pdf_btn") and qp.strip():
+        if not mode_tous:
+            # --- un seul contrat ---
+            with st.spinner("Analyse…"):
+                r = answer_routed_pdf(qp, k=5, verbose=False, search_fn=_search_pour(choix))
+            st.markdown("---")
+            _carte_contrat(choix, r)
+        else:
+            # --- per-contract : on isole le raisonnement par contrat ---
+            with st.spinner("Identification des contrats pertinents…"):
+                contrats = rag_pdf.documents_pertinents(qp, n_docs=n_docs)
+            st.markdown("---")
+            st.caption(f"Contrats analysés séparément : {', '.join(contrats)}")
+            for fichier in contrats:
+                with st.spinner(f"Analyse de {fichier}…"):
+                    r = answer_routed_pdf(qp, k=5, verbose=False, search_fn=_search_pour(fichier))
+                _carte_contrat(fichier, r)
+            st.info("ℹ️ Chaque contrat est analysé indépendamment : leurs clauses ne sont jamais "
+                    "mélangées. C'est ce qui évite d'attribuer une information au mauvais contrat.")

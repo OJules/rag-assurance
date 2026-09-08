@@ -58,6 +58,25 @@ def search(query: str, k: int = 5, filtre_fichier: str = None):
 
 
 
+def documents_pertinents(query: str, n_docs: int = 3, k_scan: int = 15):
+    """
+    Identifie les contrats les plus pertinents pour une question.
+    On fait un retrieval global large (k_scan), puis on garde les n_docs
+    premiers FICHIERS distincts rencontrés (dans l'ordre de similarité).
+    Renvoie une liste de source_file, du plus pertinent au moins pertinent.
+    """
+    q_emb = embed_query(query)
+    res = _collection.query(query_embeddings=q_emb, n_results=k_scan)
+    vus = []
+    for meta in res["metadatas"][0]:
+        f = meta.get("source_file", "?")
+        if f not in vus:
+            vus.append(f)
+        if len(vus) >= n_docs:
+            break
+    return vus
+
+
 def documents_disponibles():
     """Liste les noms de fichiers présents dans la collection (pour un menu de filtre)."""
     data = _collection.get(include=["metadatas"])
