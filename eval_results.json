@@ -11,7 +11,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "1er mars 2024",
+      "answer_found": true,
+      "attendu": "tous ces mots : 1er mars 2024",
+      "tokens": 453
     },
     {
       "id": "q02",
@@ -24,7 +28,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "La franchise bris de glace est de 0 CHF.",
+      "answer_found": true,
+      "attendu": "un de ces groupes : 0 + 150 | formule | contrat",
+      "tokens": 433
     },
     {
       "id": "q03",
@@ -37,7 +45,11 @@
         "type_detecte": "liste",
         "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "Les exclusions applicables à la garantie Vol du contrat AUTO-2024-0137 sont :\n- Les vols commis dans un lieu de stationnement non sécurisé entre 22 h et 6 h (avenant n° 1). \n- Lorsque les clés ont été laissées à l'intérieur du véhicule non verrouillé. \n- En cas de vol commis par un membre de la famille de l'assuré. \n- Lorsque le véhicule n'était pas équipé du dispositif antivol exigé aux conditions particulières. \n- Les dommages survenus alors que le conducteur était sous l'emprise d'alcool ou de stupéfiants (exclusion générale). \n- Les dommages résultant d'une participation à une compétition, à une course ou à un rallye (exclusion générale). \n- Les dommages intentionnellement causés par l'assuré (exclusion générale). \n- Les dommages survenus hors des zones géographiques mentionnées aux conditions particulières (exclusion générale).",
+      "answer_found": true,
+      "attendu": "tous ces mots : cles, famille, antivol, stationnement",
+      "tokens": 1093
     },
     {
       "id": "q04",
@@ -47,10 +59,14 @@
       "ok": true,
       "routing": {
         "question": "Si je rentre seul dans un mur avec ma voiture, suis-je couvert par AUTO-2024-0137 ?",
-        "type_detecte": "lookup",
-        "strategie": "sequential",
+        "type_detecte": "couverture",
+        "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "Oui, les dommages subis par votre véhicule en percutant un mur sont couverts par la garantie « Dommages tous accidents » qui inclut les collisions même en l'absence de tiers identifié.",
+      "answer_found": true,
+      "attendu": "tous ces mots : tous accidents",
+      "tokens": 1193
     },
     {
       "id": "q05",
@@ -60,10 +76,14 @@
       "ok": false,
       "routing": {
         "question": "Un degat des eaux du a une canalisation gelee est-il couvert ?",
-        "type_detecte": "lookup",
-        "strategie": "sequential",
+        "type_detecte": "couverture",
+        "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "Oui, le contrat HAB-2024-0455 couvre les dommages consécutifs à la rupture d’une canalisation causée par le gel, tandis que le contrat HAB-2024-0461 exclut explicitement ces dommages.",
+      "answer_found": true,
+      "attendu": "tous ces mots : depend",
+      "tokens": 1149
     },
     {
       "id": "q06",
@@ -76,7 +96,11 @@
         "type_detecte": "comparaison",
         "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "Le contrat MOTO-2023-0150 a la franchise collision la plus basse, à 750 CHF.",
+      "answer_found": true,
+      "attendu": "tous ces mots : AUTO-2024-0137, 500",
+      "tokens": 1015
     },
     {
       "id": "q07",
@@ -89,20 +113,28 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "En cas de dégât des eaux, vous devez déclarer le sinistre dans un délai de 48 heures. Pour les autres sinistres, le délai de déclaration est de 5 jours ouvrables.",
+      "answer_found": true,
+      "attendu": "un de ces groupes : 48 + 5 jours | depend",
+      "tokens": 433
     },
     {
       "id": "q08",
       "type": "vocabulaire",
       "question": "Comment fonctionne la franchise de ma complementaire sante ?",
       "recall": 1.0,
-      "ok": true,
+      "ok": false,
       "routing": {
         "question": "Comment fonctionne la franchise de ma complementaire sante ?",
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "La franchise est de 500 CHF par année civile, c’est‑à‑dire que chaque année civile vous devez d’abord supporter 500 CHF de frais avant que la couverture ne s’applique.",
+      "answer_found": true,
+      "attendu": "tous ces mots : annuelle",
+      "tokens": 441
     },
     {
       "id": "q09",
@@ -115,7 +147,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "La police d'assurance habitation en vigueur le 15 avril 2024 était le contrat n° HAB-2024-0455 (date d'effet 1er mars 2024).",
+      "answer_found": true,
+      "attendu": "tous ces mots : HAB-2024-0455",
+      "tokens": 459
     },
     {
       "id": "q10",
@@ -128,7 +164,11 @@
         "type_detecte": "comparaison",
         "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "La police HAB-2024-0461 (Habitation éco) offre le plafond Dégâts des eaux le plus élevé, soit 75 000 CHF par sinistre.",
+      "answer_found": true,
+      "attendu": "tous ces mots : HAB-2024-0461, 75",
+      "tokens": 861
     },
     {
       "id": "q11",
@@ -141,7 +181,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "L'information concernant le plafond de remboursement optique du contrat AUTO-2024-0137 n'est pas disponible dans les extraits fournis.",
+      "answer_found": false,
+      "attendu": "abstention (answer_found = false)",
+      "tokens": 1248
     },
     {
       "id": "q12",
@@ -151,10 +195,14 @@
       "ok": true,
       "routing": {
         "question": "En voyage, suis-je couvert si mon vol est annule a cause d'une pandemie ?",
-        "type_detecte": "lookup",
-        "strategie": "sequential",
+        "type_detecte": "couverture",
+        "strategie": "batch",
         "fallback": false
-      }
+      },
+      "answer": "L'information concernant la prise en charge d'une annulation de vol due à une pandémie n'est pas mentionnée dans les extraits fournis.",
+      "answer_found": false,
+      "attendu": "abstention (answer_found = false)",
+      "tokens": 1142
     },
     {
       "id": "q13",
@@ -167,7 +215,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "La franchise Dégâts des eaux du contrat HAB-2024-0461 est de 250 CHF par sinistre.",
+      "answer_found": true,
+      "attendu": "tous ces mots : 250",
+      "tokens": 454
     },
     {
       "id": "q14",
@@ -180,7 +232,11 @@
         "type_detecte": "lookup",
         "strategie": "sequential",
         "fallback": false
-      }
+      },
+      "answer": "La franchise vol de votre moto est de 500 CHF par sinistre.",
+      "answer_found": true,
+      "attendu": "tous ces mots : 500",
+      "tokens": 448
     }
   ],
   "by_type": {
@@ -210,7 +266,7 @@
     },
     "vocabulaire": {
       "recall": 1.0,
-      "accuracy": 1.0
+      "accuracy": 0.0
     },
     "temporel": {
       "recall": 1.0,
@@ -231,17 +287,18 @@
   },
   "strategies": {
     "all_batch": {
-      "accuracy": 0.86,
-      "tokens": 14223
+      "accuracy": 0.71,
+      "tokens": 14263
     },
     "all_seq": {
       "accuracy": 0.71,
-      "tokens": 10078
+      "tokens": 14485
     },
     "routed": {
-      "accuracy": 0.79,
-      "tokens": 8701
+      "accuracy": 0.71,
+      "tokens": 10822
     }
   },
-  "k": 5
+  "k": 5,
+  "model": "openai/gpt-oss-120b"
 }

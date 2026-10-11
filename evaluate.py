@@ -23,8 +23,15 @@ from chatbot import answer_batch, answer_sequential
 K = 5
 
 def norm(s: str) -> str:
-    s = unicodedata.normalize("NFD", s.lower())
-    return "".join(c for c in s if unicodedata.category(c) != "Mn")
+    """
+    Minuscules, sans accents, et typographie neutralisée : le modèle écrit souvent
+    « 5 jours » avec une espace insécable et « n’est » avec une apostrophe courbe,
+    ce qui faisait échouer la comparaison avec « 5 jours » alors que la réponse était juste.
+    """
+    s = unicodedata.normalize("NFKD", s.lower())        # NFKD ramène les espaces insécables à l'espace
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = s.replace("’", "'").replace("‘", "'")
+    return " ".join(s.split())                           # toute suite d'espaces -> une espace
 
 def retrieved_ids(question: str, k: int = K):
     return [f"{h['document_id']}::sec{h['metadata']['section_index']}" for h in search(question, k=k)]

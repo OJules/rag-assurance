@@ -17,6 +17,10 @@ SOURCE DE RECHERCHE INJECTABLE :
   par défaut on utilise rag.search (corpus markdown). En passant search_fn=rag_pdf.search,
   la MÊME chaîne (stratégies, contrat, abstention) tourne sur le corpus PDF, sans autre
   changement. C'est le bénéfice de l'architecture isolée.
+
+GÉNÉRATION INJECTABLE (batch) :
+  par défaut llm.generate (contrat général). En passant generate_fn=llm.generate_couverture,
+  le batch rend une décision de couverture au lieu d'une réponse libre.
 """
 from rag import search as _search_markdown
 from llm import generate
@@ -24,10 +28,11 @@ from llm import generate
 ABSTAIN_AFTER = 2   # early-stop : N tentatives sans answer_found -> on borne et on s'abstient
 
 
-def answer_batch(question: str, k: int = 5, search_fn=None) -> dict:
+def answer_batch(question: str, k: int = 5, search_fn=None, generate_fn=None) -> dict:
     search_fn = search_fn or _search_markdown
+    generate_fn = generate_fn or generate
     hits = search_fn(question, k=k)
-    contract = generate(question, hits)
+    contract = generate_fn(question, hits)
     contract["_strategy"] = "batch"
     contract["_docs_used"] = len(hits)
     contract["_llm_calls"] = 1
