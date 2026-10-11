@@ -97,7 +97,8 @@ Decision  +  cited clause  +  extraction quality  +  what is missing
 
 ### What I would do next
 
-- **Structured extraction into a table** (deductibles, ceilings, guarantees per contract), queried directly for value questions. This is the answer to "hundreds of contracts" that per-contract reasoning cannot give.
+- **A small table of declared fields to filter contracts before any search** (product, effective date, policy number), filled once per document. Today I pick contracts by embedding similarity, and for a stolen bicycle that selection kept a motor-insurance contract; a "product" column would have ruled it out without a single LLM call. This is what makes the cost per question stop growing with the number of contracts.
+- **Row-level chunks for guarantee tables**, so that a value question ("what is the theft deductible?") retrieves one row instead of a flattened table. My quality score currently labels those flattened tables "poor" and stops there.
 - **Layout-aware extraction**, the root cause of most remaining errors on real PDFs.
 - **A larger annotated gold set**, including coverage scenarios on real contracts, to tell real progress from tuning on two questions.
 - **Calibrated abstention**: replace "the LLM says it doesn't know" with a statistically guaranteed abstention rate (conformal risk control - the subject of my thesis).
@@ -210,7 +211,8 @@ Décision  +  clause citée  +  qualité d'extraction  +  ce qu'il manque
 
 ### Ce que je ferais ensuite
 
-- **Extraction structurée vers une table** (franchises, plafonds, garanties par contrat), interrogée directement pour les questions de valeur. C'est la réponse aux « centaines de contrats » que le raisonnement par contrat ne peut pas donner.
+- **Une petite table de champs déclarés pour filtrer les contrats avant toute recherche** (produit, date d'effet, numéro de police), remplie une fois par document. Aujourd'hui je choisis les contrats par similarité d'embeddings, et pour un vélo volé cette sélection a retenu un contrat automobile ; une colonne « produit » l'aurait écarté sans un seul appel au LLM. C'est ce qui fait que le coût par question cesse de croître avec le nombre de contrats.
+- **Des chunks par ligne pour les tableaux de garanties**, pour qu'une question de valeur (« quelle est la franchise vol ? ») récupère une ligne au lieu d'un tableau aplati. Mon score de qualité classe aujourd'hui ces tableaux aplatis en « faible » et s'arrête là.
 - **Extraction sensible à la mise en page**, cause de fond de la plupart des erreurs restantes sur les vrais PDF.
 - **Un gold set annoté plus large**, avec des scénarios de couverture sur de vrais contrats, pour distinguer un vrai progrès d'un réglage sur deux questions.
 - **Abstention calibrée** : remplacer « le LLM dit qu'il ne sait pas » par un taux d'abstention à garantie statistique (contrôle de risque conforme - le sujet de mon mémoire).
